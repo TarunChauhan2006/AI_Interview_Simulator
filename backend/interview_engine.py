@@ -1,13 +1,12 @@
 import os
-import json
 from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
 MODEL = "llama-3.1-8b-instant"
+
 
 def call_groq(prompt):
     try:
@@ -16,36 +15,50 @@ def call_groq(prompt):
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a professional HR and technical interviewer. Be strict, useful, and practical."
+                    "content": "You are a strict professional HR and technical interviewer.",
                 },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
+                {"role": "user", "content": prompt},
             ],
             temperature=0.4,
-            max_completion_tokens=900,
+            max_completion_tokens=1000,
         )
-        return response.choices[0].message.content
+        return response.choices[0].message.content.strip()
     except Exception as e:
         return f"Groq error: {str(e)}"
 
+
 def generate_question(role, level, resume_context=""):
     prompt = f"""
-Candidate role: {role}
-Difficulty: {level}
+Ask ONE practical interview question.
 
-Candidate resume:
+Role: {role}
+Level: {level}
+
+Resume:
 {resume_context[:2500]}
 
-Ask only ONE realistic interview question.
-Question should be practical and job-focused.
+Rules:
+Return only the question.
+No intro.
+No note.
+No markdown.
 """
     return call_groq(prompt)
 
+
+def generate_interview_questions(role, level, resume_context=""):
+    questions = []
+
+    for _ in range(5):
+        question = generate_question(role, level, resume_context)
+        questions.append(question)
+
+    return questions
+
+
 def generate_feedback(question, answer_text):
     prompt = f"""
-Evaluate this interview answer.
+Evaluate this interview answer strictly.
 
 Question:
 {question}
@@ -58,10 +71,10 @@ Return feedback in this exact format:
 Score: /10
 
 Strengths:
-- 
+-
 
 Weaknesses:
-- 
+-
 
 Improved Answer:
 
